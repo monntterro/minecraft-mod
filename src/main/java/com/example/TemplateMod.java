@@ -1,24 +1,24 @@
 package com.example;
 
+import com.example.database.DatabaseManager;
 import net.fabricmc.api.ModInitializer;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 
 public class TemplateMod implements ModInitializer {
-	public static final String MOD_ID = "template-mod";
 
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
-	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    @Override
+    public void onInitialize() {
+        ProtobufMessagePacket.register();
+        ProtobufMessagePacket.registerServer();
 
-	@Override
-	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+            String jdbcUrl = System.getProperty("PG_URL", "jdbc:postgresql://localhost:5433/minecraft");
+            String username = System.getProperty("PG_USER", "myuser");
+            String password = System.getProperty("PG_PASSWORD", "mypassword");
 
-		LOGGER.info("Hello Fabric world!");
-	}
+            DatabaseManager.initialize(jdbcUrl, username, password);
+        });
+
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> DatabaseManager.shutdown());
+    }
 }
